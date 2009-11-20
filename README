@@ -1,0 +1,8 @@
+Optimization dispatcher that can launch arbitrary external process to be used
+to perform the actual optimization. This can be useful if you need to write
+the evaluator as part of a larger, already existing application. This dispatcher
+can offer the task description on stdin, or send it to a tcp/unix server.
+
+Additionally, it can launch persisting applications in combination with the
+tcp/unix server functionality. This is particularly useful for applications
+that have a relatively long startup time, such as matlab.
