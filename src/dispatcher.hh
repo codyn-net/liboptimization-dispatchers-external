@@ -49,6 +49,9 @@ namespace external
 			bool TextMode();
 			bool ExtractProtobuf(os::FileDescriptor::DataArgs &args);
 			bool ExtractText(os::FileDescriptor::DataArgs &args);
+
+			std::string WorkingDirectory();
+			bool PersistNumeric(std::string const &persist);
 	};
 }
 

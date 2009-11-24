@@ -414,31 +414,46 @@ Dispatcher::LaunchPersistent()
 	Client client;
 	size_t tried = 0;
 	bool launched = false;
-	
+	string addr;
+
+	if (PersistNumeric(persist))
+	{
+		// AddressInfo doesn't like that, so we use something special
+		addr = ":" + persist;
+	}
+	else
+	{
+		addr = persist;
+	}
+
+	map<string, string> envp = SetupEnvironment();
+	envp["OPTIMIZATION_EXTERNAL"] = "yes";
+	envp["OPTIMIZATION_EXTERNAL_PERSISTENT"] = persist;
+
+	vector<string> envs = Environment::convert(envp);
+	vector<string> argv;
+
+	if (!SetupArguments(argv))
+	{
+		return false;
+	}
+
 	while (!client)
 	{
-		client = Client::resolve<Client>(AddressInfo::Parse(persist));
+		client = Client::resolve<Client>(AddressInfo::Parse(addr));
 
 		if (!client && !launched)
 		{
 			try
 			{
-				map<string, string> envp = SetupEnvironment();
-				vector<string> argv;
-				
-				if (!SetupArguments(argv))
-				{
-					break;
-				}
-
 				GPid pid;
 				gint sin;
 				gint sout;
 				gint serr;
 
-				Glib::spawn_async_with_pipes("",
+				Glib::spawn_async_with_pipes(WorkingDirectory(),
 				                             argv,
-				                             Environment::convert(envp),
+				                             envs,
 				                             Glib::SPAWN_SEARCH_PATH,
 				                             sigc::slot<void>(),
 				                             &pid,
@@ -449,6 +464,13 @@ Dispatcher::LaunchPersistent()
 				close(sin);
 				close(sout);
 				close(serr);
+
+				string delay;
+				if (Setting("startup-delay", delay))
+				{
+					double tt = String(delay).convert<double>();
+					usleep(tt * 1000000);
+				}
 			}
 			catch (Glib::SpawnError &e)
 			{
@@ -461,8 +483,9 @@ Dispatcher::LaunchPersistent()
 
 		if (!client)
 		{
-			if (++tried >= 5)
+			if (++tried >= 20)
 			{
+				cerr << "Tried to connect to external one, too many times..." << endl;
 				break;
 			}
 
@@ -476,14 +499,18 @@ Dispatcher::LaunchPersistent()
 	}
 
 	// Send task
-	SendTask(client);
 	ReadDataFrom(client);
+	SendTask(client);
+
+	return true;
 }
 
 bool
 Dispatcher::Launch()
 {
 	map<string, string> envp = SetupEnvironment();
+	envp["OPTIMIZATION_EXTERNAL"] = "yes";
+
 	vector<string> argv;
 	
 	if (!SetupArguments(argv))
@@ -496,7 +523,7 @@ Dispatcher::Launch()
 
 	try
 	{
-		Glib::spawn_async_with_pipes("",
+		Glib::spawn_async_with_pipes(WorkingDirectory(),
 		                             argv,
 		                             Environment::convert(envp),
 		                             Glib::SPAWN_DO_NOT_REAP_CHILD |
@@ -509,7 +536,7 @@ Dispatcher::Launch()
 	}
 	catch (Glib::SpawnError &e)
 	{
-		cerr << "Error while spawning webots: " << e.what() << endl;
+		cerr << "Error while spawning external: " << e.what() << endl;
 		return false;
 	}
 	
@@ -544,4 +571,25 @@ Dispatcher::TextMode()
 {
 	string mode;
 	return Setting("mode", mode) && mode == "text";
+}
+
+std::string
+Dispatcher::WorkingDirectory()
+{
+	string directory;
+	return Setting("working-directory", directory) ? directory : "";
+}
+
+bool
+Dispatcher::PersistNumeric(string const &persist)
+{
+	for (size_t i = 0; i < persist.size(); ++i)
+	{
+		if (!isdigit(persist[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
