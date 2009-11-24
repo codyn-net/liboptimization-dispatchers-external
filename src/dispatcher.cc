@@ -163,7 +163,7 @@ bool
 Dispatcher::OnResponseData(os::FileDescriptor::DataArgs &args)
 {
 	bool ret;
-	
+
 	if (TextMode())
 	{
 		ret = ExtractText(args);
@@ -172,7 +172,12 @@ Dispatcher::OnResponseData(os::FileDescriptor::DataArgs &args)
 	{
 		ret = ExtractProtobuf(args);
 	}
-	
+
+	if (ret && Persistent())
+	{
+		Stop();
+	}
+
 	if (ret && !d_timeout)
 	{
 		// If we only expect one response, set a timeout just to make
@@ -186,8 +191,10 @@ Dispatcher::OnResponseData(os::FileDescriptor::DataArgs &args)
 bool
 Dispatcher::OnTimeout()
 {
-	// Close webots
+	// Close external
 	KillExternal();
+	Stop();
+
 	return false;
 }
 
