@@ -10,7 +10,7 @@ INCLUDES = \
 	-DPKGDATADIR=\""$(pkgdatadir)"\" \
 	-DPKGLIBDIR=\""$(pkglibdir)"\"
 
-dispdir = $(prefix)/libexec/liboptimization-dispatchers-1.0
+dispdir = $(prefix)/libexec/liboptimization-dispatchers-2.0
 disp_PROGRAMS = external
 
 external_SOURCES = \

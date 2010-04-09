@@ -2,9 +2,9 @@
 #define __EXTERNAL_DISPATCHER_H__
 
 #include <optimization/dispatcher.hh>
-#include <network/UnixServer/unixserver.hh>
-#include <network/Client/client.hh>
-#include <os/Pipe/pipe.hh>
+#include <jessevdk/network/unixserver.hh>
+#include <jessevdk/network/client.hh>
+#include <jessevdk/os/pipe.hh>
 
 namespace external
 {
@@ -13,7 +13,7 @@ namespace external
 		sigc::connection d_timeout;
 		Glib::Pid d_pid;
 
-		base::Cloneable<os::FileDescriptor> d_readResponse;
+		jessevdk::base::Cloneable<jessevdk::os::FileDescriptor> d_readResponse;
 
 		public:
 			Dispatcher();
@@ -33,22 +33,22 @@ namespace external
 
 			bool OnTimeout();
 			
-			bool OnResponseData(os::FileDescriptor::DataArgs &args);
+			bool OnResponseData(jessevdk::os::FileDescriptor::DataArgs &args);
 
 			std::string ResolveExternalExecutable(std::string const &path);
 			bool Persistent();
 
-			void ReadDataFrom(os::FileDescriptor &readFrom);
+			void ReadDataFrom(jessevdk::os::FileDescriptor &readFrom);
 			std::map<std::string, std::string> SetupEnvironment();
 			bool SetupArguments(std::vector<std::string> &argv);
 
-			void SendTask(os::FileDescriptor &out);
-			void SendTaskProtobuf(os::FileDescriptor &out);
-			void SendTaskText(os::FileDescriptor &out);
+			void SendTask(jessevdk::os::FileDescriptor &out);
+			void SendTaskProtobuf(jessevdk::os::FileDescriptor &out);
+			void SendTaskText(jessevdk::os::FileDescriptor &out);
 
 			bool TextMode();
-			bool ExtractProtobuf(os::FileDescriptor::DataArgs &args);
-			bool ExtractText(os::FileDescriptor::DataArgs &args);
+			bool ExtractProtobuf(jessevdk::os::FileDescriptor::DataArgs &args);
+			bool ExtractText(jessevdk::os::FileDescriptor::DataArgs &args);
 
 			std::string WorkingDirectory();
 			bool PersistNumeric(std::string const &persist);

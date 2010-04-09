@@ -1,6 +1,6 @@
 SUBDIRS = src
 
-confexdir = $(datadir)/liboptimization1-dispatchers-external
+confexdir = $(datadir)/liboptimization2-dispatchers-external
 confex_DATA = external.conf.ex
 
 EXTRA_DIST = \

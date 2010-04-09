@@ -23,11 +23,11 @@
 
 #include "dispatcher.hh"
 
-#include <os/Environment/environment.hh>
-#include <os/FileSystem/filesystem.hh>
+#include <jessevdk/os/environment.hh>
+#include <jessevdk/os/filesystem.hh>
 #include <optimization/messages.hh>
 #include <glibmm.h>
-#include <base/String/string.hh>
+#include <jessevdk/base/string.hh>
 #include <signal.h>
 #include <sys/stat.h>
 #include <pwd.h>
@@ -36,10 +36,10 @@
 
 using namespace std;
 using namespace external;
-using namespace os;
-using namespace network;
+using namespace jessevdk::os;
+using namespace jessevdk::network;
 using namespace optimization::messages;
-using namespace base;
+using namespace jessevdk::base;
 
 Dispatcher::~Dispatcher()
 {
@@ -57,7 +57,7 @@ Dispatcher::Dispatcher()
 :
 	d_pid(0)
 {
-	Config::Initialize(PREFIXDIR "/libexec/liboptimization-dispatchers-1.0/external.conf");
+	Config::Initialize(PREFIXDIR "/libexec/liboptimization-dispatchers-2.0/external.conf");
 }
 
 void
@@ -82,16 +82,16 @@ Dispatcher::KillExternal()
 }
 
 bool
-Dispatcher::ExtractText(os::FileDescriptor::DataArgs &args)
+Dispatcher::ExtractText(FileDescriptor::DataArgs &args)
 {
-	if (!String(args.data).endsWith("\n\n"))
+	if (!String(args.data).EndsWith("\n\n"))
 	{
-		args.buffer(args.data);
+		args.Buffer(args.data);
 		return false;
 	}
 
 	// Parse it then
-	vector<string> parts = String(args.data).split("\n");
+	vector<string> parts = String(args.data).Split("\n");
 	task::Response response;
 
 	response.set_status(task::Response::Failed);
@@ -110,14 +110,14 @@ Dispatcher::ExtractText(os::FileDescriptor::DataArgs &args)
 	}
 	else
 	{
-		failure.set_message(String::join(vector<string>(parts.begin() + 1, parts.end()), "\n"));
+		failure.set_message(String::Join(vector<string>(parts.begin() + 1, parts.end()), "\n"));
 		WriteResponse(response);
 		return true;
 	}
 
 	for (vector<string>::iterator iter = parts.begin() + 1; iter != parts.end(); ++iter)
 	{
-		string stripped = String(*iter).strip();
+		string stripped = String(*iter).Strip();
 
 		if (stripped == "")
 		{
@@ -141,18 +141,22 @@ Dispatcher::ExtractText(os::FileDescriptor::DataArgs &args)
 }
 
 bool
-Dispatcher::ExtractProtobuf(os::FileDescriptor::DataArgs &args)
+Dispatcher::ExtractProtobuf(FileDescriptor::DataArgs &args)
 {
 	bool ret = false;
 
-	vector<task::Response> response;
-	vector<task::Response>::iterator iter;
+	vector<task::Communication> comms;
+	vector<task::Communication>::iterator iter;
 
-	optimization::Messages::Extract(args, response);
+	optimization::Messages::Extract(args, comms);
 
-	for (iter = response.begin(); iter != response.end(); ++iter)
+	for (iter = comms.begin(); iter != comms.end(); ++iter)
 	{
-		WriteResponse(*iter);
+		if (iter->type() == task::Communication::CommunicationResponse)
+		{
+			WriteResponse(iter->response());
+		}
+
 		ret = true;
 	}
 
@@ -160,7 +164,7 @@ Dispatcher::ExtractProtobuf(os::FileDescriptor::DataArgs &args)
 }
 
 bool
-Dispatcher::OnResponseData(os::FileDescriptor::DataArgs &args)
+Dispatcher::OnResponseData(FileDescriptor::DataArgs &args)
 {
 	bool ret;
 
@@ -205,8 +209,8 @@ Dispatcher::OnExternalKilled(GPid pid, int ret)
 
 	if (d_readResponse)
 	{
-		d_readResponse->onData().remove(*this, &Dispatcher::OnResponseData);
-		d_readResponse->close();
+		d_readResponse->OnData().Remove(*this, &Dispatcher::OnResponseData);
+		d_readResponse->Close();
 	}
 	
 	if (d_timeout)
@@ -236,7 +240,7 @@ Dispatcher::ResolveExternalExecutable(std::string const &path)
 	}
 
 	// System webots is fine
-	if (String(ret).startsWith("/usr"))
+	if (String(ret).StartsWith("/usr"))
 	{
 		return ret;
 	}
@@ -258,7 +262,7 @@ Dispatcher::ResolveExternalExecutable(std::string const &path)
 		cerr << "Custom external executable is not owned by the user: " << ret << endl;
 		return "";
 	}
-	else if (!String(ret).startsWith(homedir))
+	else if (!String(ret).StartsWith(homedir))
 	{
 		cerr << "Custom external executable is not in user home directory: " << ret << endl;
 		return "";
@@ -272,16 +276,16 @@ Dispatcher::ResolveExternalExecutable(std::string const &path)
 map<string, string>
 Dispatcher::SetupEnvironment()
 {
-	map<string, string> envp = Environment::all();
+	map<string, string> envp = Environment::All();
 	
 	string environment;
 	if (Setting("environment", environment))
 	{
-		vector<string> vars = String(environment).split(",");
+		vector<string> vars = String(environment).Split(",");
 		
 		for (vector<string>::iterator iter = vars.begin(); iter != vars.end(); ++iter)
 		{
-			vector<string> parts = String(*iter).split("=", 2);
+			vector<string> parts = String(*iter).Split("=", 2);
 			
 			if (parts.size() == 2)
 			{
@@ -347,49 +351,54 @@ Dispatcher::RunTask()
 }
 
 void
-Dispatcher::ReadDataFrom(os::FileDescriptor &readFrom)
+Dispatcher::ReadDataFrom(FileDescriptor &readFrom)
 {
 	d_readResponse = readFrom;
-	d_readResponse->onData().add(*this, &Dispatcher::OnResponseData);
+	d_readResponse->OnData().Add(*this, &Dispatcher::OnResponseData);
 }
 
 void
-Dispatcher::SendTaskProtobuf(os::FileDescriptor &out)
+Dispatcher::SendTaskProtobuf(FileDescriptor &out)
 {
 	// Simply serialize and send it
 	string serialized;
 
-	if (optimization::Messages::Create(Request(), serialized))
+	task::Communication comm;
+	comm.set_type(task::Communication::CommunicationTask);
+
+	*comm.mutable_task() = Task();
+
+	if (optimization::Messages::Create(comm, serialized))
 	{
-		out.write(serialized);
+		out.Write(serialized);
 	}
 }
 
 void
-Dispatcher::SendTaskText(os::FileDescriptor &out)
+Dispatcher::SendTaskText(FileDescriptor &out)
 {
-	optimization::messages::task::Task::Description const &dest = Request();
+	task::Task const &task = Task();
 	stringstream s;
 
-	for (size_t i = 0; i < dest.settings_size(); ++i)
+	for (size_t i = 0; i < task.settings_size(); ++i)
 	{
-		s << "setting\t" << dest.settings(i).key() << "\t" << dest.settings(i).value() << endl;
+		s << "setting\t" << task.settings(i).key() << "\t" << task.settings(i).value() << endl;
 	}
 
 	s << endl;
 
-	for (size_t i = 0; i < dest.parameters_size(); ++i)
+	for (size_t i = 0; i < task.parameters_size(); ++i)
 	{
-		optimization::messages::task::Task::Description::Parameter const &param = dest.parameters(i);
+		task::Task::Parameter const &param = task.parameters(i);
 
 		s << "parameter\t" << param.name() << "\t" << param.value() << "\t" << param.min() << "\t" << param.max() << endl;
 	}
 
-	out.write(s.str());
+	out.Write(s.str());
 }
 
 void
-Dispatcher::SendTask(os::FileDescriptor &out)
+Dispatcher::SendTask(FileDescriptor &out)
 {
 	string mode;
 
@@ -416,6 +425,17 @@ Dispatcher::LaunchPersistent()
 	bool launched = false;
 	string addr;
 
+	// Check if it's overwritten by some environment variable, hmm hack!
+	string envvar;
+	if (Setting("persistent-env", envvar))
+	{
+		string envper;
+		if (Environment::Variable(envvar, envper))
+		{
+			persist = envper;
+		}
+	}
+
 	if (PersistNumeric(persist))
 	{
 		// AddressInfo doesn't like that, so we use something special
@@ -430,7 +450,7 @@ Dispatcher::LaunchPersistent()
 	envp["OPTIMIZATION_EXTERNAL"] = "yes";
 	envp["OPTIMIZATION_EXTERNAL_PERSISTENT"] = persist;
 
-	vector<string> envs = Environment::convert(envp);
+	vector<string> envs = Environment::Convert(envp);
 	vector<string> argv;
 
 	if (!SetupArguments(argv))
@@ -440,7 +460,7 @@ Dispatcher::LaunchPersistent()
 
 	while (!client)
 	{
-		client = Client::resolve<Client>(AddressInfo::Parse(addr));
+		client = Client::Resolve<Client>(AddressInfo::Parse(addr));
 
 		if (!client && !launched)
 		{
@@ -468,7 +488,7 @@ Dispatcher::LaunchPersistent()
 				string delay;
 				if (Setting("startup-delay", delay))
 				{
-					double tt = String(delay).convert<double>();
+					double tt = String(delay).Convert<double>();
 					usleep(tt * 1000000);
 				}
 			}
@@ -525,7 +545,7 @@ Dispatcher::Launch()
 	{
 		Glib::spawn_async_with_pipes(WorkingDirectory(),
 		                             argv,
-		                             Environment::convert(envp),
+		                             Environment::Convert(envp),
 		                             Glib::SPAWN_DO_NOT_REAP_CHILD |
 		                             Glib::SPAWN_SEARCH_PATH,
 		                             sigc::slot<void>(),
@@ -543,12 +563,12 @@ Dispatcher::Launch()
 	Glib::signal_child_watch().connect(sigc::mem_fun(*this, &Dispatcher::OnExternalKilled), d_pid);
 
 	// Read response from sout
-	os::FileDescriptor fout(sout);
+	FileDescriptor fout(sout);
 	ReadDataFrom(fout);
 
-	os::FileDescriptor fin(sin);
+	FileDescriptor fin(sin);
 	SendTask(fin);
-	fin.close();
+	fin.Close();
 
 	return true;
 }

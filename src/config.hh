@@ -1,12 +1,12 @@
 #ifndef __EXTERNAL_CONFIG_H__
 #define __EXTERNAL_CONFIG_H__
 
-#include <base/Config/config.hh>
+#include <jessevdk/base/config.hh>
 #include <glibmm.h>
 
 namespace external
 {
-	class Config : public base::Config
+	class Config : public jessevdk::base::Config
 	{
 		static Config *s_instance;
 
