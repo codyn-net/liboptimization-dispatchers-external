@@ -1,4 +1,4 @@
-AC_INIT(liboptimization-dispatchers-external, 2.0)
+AC_INIT(liboptimization-dispatchers-external, 2.1)
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
