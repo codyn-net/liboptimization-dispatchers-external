@@ -1,0 +1,18 @@
+Source: liboptimization2-dispatchers-external
+Priority: extra
+Maintainer: Jesse van den Kieboom <jesse.vandenkieboom@epfl.ch>
+Build-Depends: debhelper (>= 7),
+               autotools-dev,
+               cdbs,
+               pkg-config,
+               liboptimization2-dev (>= 2.0)
+Standards-Version: 3.8.0
+Section: science
+Homepage: http://birg.epfl.ch
+
+Package: liboptimization2-dispatchers-external
+Section: science
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, liboptimization2 (>= 2.0)
+Description: Optimization external dispatcher
+ Optimization dispatcher for external applications

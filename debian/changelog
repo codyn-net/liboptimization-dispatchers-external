@@ -1,0 +1,5 @@
+liboptimization2-dispatchers-external (2.0-1) UNRELEASED; urgency=low
+
+  * Initial release.
+
+ -- Jesse van den Kieboom <jvanden@grijpc10.epfl.ch>  Fri, 09 Apr 2010 17:59:49 +0200
