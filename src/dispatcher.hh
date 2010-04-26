@@ -5,6 +5,7 @@
 #include <jessevdk/network/unixserver.hh>
 #include <jessevdk/network/client.hh>
 #include <jessevdk/os/pipe.hh>
+#include <jessevdk/os/terminator.hh>
 
 namespace external
 {
@@ -12,6 +13,7 @@ namespace external
 	{
 		sigc::connection d_timeout;
 		Glib::Pid d_pid;
+		jessevdk::os::Terminator d_terminator;
 
 		jessevdk::base::Cloneable<jessevdk::os::FileDescriptor> d_readResponse;
 
