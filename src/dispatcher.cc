@@ -68,17 +68,10 @@ Dispatcher::KillExternal()
 		return;
 	}
 
-	// Kill whole process group nicely first
-	::kill(-(int)d_pid, SIGTERM);
-	::kill(d_pid, SIGTERM);
+	GPid pid = d_pid;
+	d_pid = 0;
 
-	usleep(200000);
-	
-	// Then just kill it
-	::kill(-(int)d_pid, SIGKILL);
-	::kill(d_pid, SIGKILL);
-
-	OnExternalKilled(d_pid, 0);
+	d_terminator.Terminate(pid, true, false);
 }
 
 bool
@@ -180,6 +173,7 @@ Dispatcher::OnResponseData(FileDescriptor::DataArgs &args)
 	if (ret && Persistent())
 	{
 		Stop();
+		return false;
 	}
 
 	if (ret && !d_timeout)
@@ -203,7 +197,7 @@ Dispatcher::OnTimeout()
 }
 
 void
-Dispatcher::OnExternalKilled(GPid pid, int ret) 
+Dispatcher::OnExternalKilled(GPid pid, int ret)
 {
 	Glib::spawn_close_pid(pid);
 
@@ -212,12 +206,12 @@ Dispatcher::OnExternalKilled(GPid pid, int ret)
 		d_readResponse->OnData().Remove(*this, &Dispatcher::OnResponseData);
 		d_readResponse->Close();
 	}
-	
+
 	if (d_timeout)
 	{
 		d_timeout.disconnect();
 	}
-	
+
 	d_pid = 0;
 	Main()->quit();
 }
@@ -233,7 +227,7 @@ Dispatcher::ResolveExternalExecutable(std::string const &path)
 		cerr << "Could not find external executable: " << path << endl;
 		return ret;
 	}
-	
+
 	if (!config.Secure)
 	{
 		return ret;
@@ -277,16 +271,16 @@ map<string, string>
 Dispatcher::SetupEnvironment()
 {
 	map<string, string> envp = Environment::All();
-	
+
 	string environment;
 	if (Setting("environment", environment))
 	{
 		vector<string> vars = String(environment).Split(",");
-		
+
 		for (vector<string>::iterator iter = vars.begin(); iter != vars.end(); ++iter)
 		{
 			vector<string> parts = String(*iter).Split("=", 2);
-			
+
 			if (parts.size() == 2)
 			{
 				envp[parts[0]] = parts[1];
@@ -310,20 +304,20 @@ Dispatcher::SetupArguments(vector<string> &argv)
 		cerr << "Setting 'path' not set" << endl;
 		return false;
 	}
-	
+
 	path = ResolveExternalExecutable(path);
-	
+
 	if (path == "")
 	{
 		cerr << "Could not find external executable" << endl;
 		return false;
 	}
-	
+
 	argv.push_back(path);
 
 	// Append arguments
 	string args;
-	
+
 	if (Setting("arguments", args))
 	{
 		vector<string> splitted = Glib::shell_parse_argv(args);
@@ -467,23 +461,13 @@ Dispatcher::LaunchPersistent()
 			try
 			{
 				GPid pid;
-				gint sin;
-				gint sout;
-				gint serr;
 
 				Glib::spawn_async_with_pipes(WorkingDirectory(),
 				                             argv,
 				                             envs,
 				                             Glib::SPAWN_SEARCH_PATH,
 				                             sigc::slot<void>(),
-				                             &pid,
-				                             &sin,
-				                             &sout,
-				                             &serr);
-
-				close(sin);
-				close(sout);
-				close(serr);
+				                             &pid);
 
 				string delay;
 				if (Setting("startup-delay", delay))
@@ -532,7 +516,7 @@ Dispatcher::Launch()
 	envp["OPTIMIZATION_EXTERNAL"] = "yes";
 
 	vector<string> argv;
-	
+
 	if (!SetupArguments(argv))
 	{
 		return false;
@@ -559,7 +543,7 @@ Dispatcher::Launch()
 		cerr << "Error while spawning external: " << e.what() << endl;
 		return false;
 	}
-	
+
 	Glib::signal_child_watch().connect(sigc::mem_fun(*this, &Dispatcher::OnExternalKilled), d_pid);
 
 	// Read response from sout
@@ -577,7 +561,7 @@ bool
 Dispatcher::Persistent()
 {
 	string persist;
-	
+
 	if (!Setting("persistent", persist))
 	{
 		return false;
