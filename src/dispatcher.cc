@@ -421,13 +421,37 @@ Dispatcher::LaunchPersistent()
 
 	// Check if it's overwritten by some environment variable, hmm hack!
 	string envvar;
+	string envper;
+
 	if (Setting("persistent-env", envvar))
 	{
-		string envper;
 		if (Environment::Variable(envvar, envper))
 		{
 			persist = envper;
 		}
+	}
+
+	if (PersistNumeric(persist) && Environment::Variable("OPTIWORKER_PROCESS_NUMBER", envper))
+	{
+		size_t num = 0;
+
+		{
+			stringstream pi(persist);
+			pi >> num;
+		}
+
+		{
+			size_t tmpnum;
+			stringstream pi(envper);
+			pi >> tmpnum;
+
+			num += tmpnum;
+		}
+
+		stringstream s;
+		s << num;
+
+		persist = s.str();
 	}
 
 	if (PersistNumeric(persist))
