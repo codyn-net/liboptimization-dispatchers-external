@@ -517,7 +517,7 @@ Dispatcher::LaunchPersistent()
 				break;
 			}
 
-			usleep(200000);
+			usleep(1000000);
 		}
 	}
 
