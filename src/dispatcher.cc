@@ -476,6 +476,8 @@ Dispatcher::LaunchPersistent()
 		return false;
 	}
 
+	GPid pid;
+
 	while (!client)
 	{
 		client = Client::Resolve<Client>(AddressInfo::Parse(addr));
@@ -484,8 +486,6 @@ Dispatcher::LaunchPersistent()
 		{
 			try
 			{
-				GPid pid;
-
 				Glib::spawn_async_with_pipes(WorkingDirectory(),
 				                             argv,
 				                             envs,
@@ -523,6 +523,11 @@ Dispatcher::LaunchPersistent()
 
 	if (!client)
 	{
+		if (launched)
+		{
+			d_terminator.Terminate(pid, true, false);
+		}
+
 		return false;
 	}
 
