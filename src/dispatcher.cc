@@ -249,16 +249,18 @@ Dispatcher::ResolveExternalExecutable(std::string const &path)
 		return "";
 	}
 
-	struct passwd *pwd = getpwuid(getuid());
-	string homedir = pwd->pw_dir;
+	struct passwd *owner = getpwuid(buf.st_uid);
 
 	for (vector<string>::iterator iter = allowed.begin(); iter != allowed.end(); ++iter)
 	{
-		if (String(*iter).Strip() == string(pwd->pw_name))
+		if (String(*iter).Strip() == string(owner->pw_name))
 		{
 			return ret;
 		}
 	}
+
+	struct passwd *pwd = getpwuid(getuid());
+	string homedir = pwd->pw_dir;
 
 	if (buf.st_uid != getuid())
 	{
