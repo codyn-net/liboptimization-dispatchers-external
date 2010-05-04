@@ -32,6 +32,7 @@ Config::Config()
 	Secure(true)
 {
 	Register("secure", Secure);
+	Register("allowed owners", AllowedOwners);
 }
 
 Config &
@@ -41,7 +42,7 @@ Config::Initialize(string const &filename)
 	{
 		s_instance = new Config();
 	}
-	
+
 	s_instance->Read(filename);
 	return *s_instance;
 }
