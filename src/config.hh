@@ -12,7 +12,8 @@ namespace external
 
 		public:
 			bool Secure;
-			
+			Glib::ustring AllowedOwners;
+
 			/* Constructor/destructor */
 			static Config &Initialize(std::string const &filename);
 			static Config &Instance();

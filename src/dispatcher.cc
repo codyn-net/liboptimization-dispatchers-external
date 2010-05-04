@@ -221,6 +221,7 @@ Dispatcher::ResolveExternalExecutable(std::string const &path)
 {
 	string ret = Glib::find_program_in_path(path);
 	Config &config = Config::Instance();
+	vector<string> allowed = String(config.AllowedOwners).Split(",");
 
 	if (ret == "")
 	{
@@ -233,13 +234,13 @@ Dispatcher::ResolveExternalExecutable(std::string const &path)
 		return ret;
 	}
 
-	// System webots is fine
+	// System externals are fine
 	if (String(ret).StartsWith("/usr"))
 	{
 		return ret;
 	}
 
-	// Otherwise, must be owned by the user, and in his/her home directory
+	// Otherwise, must be owned by AllowedUsers or by the user, and in his/her home directory
 	struct stat buf;
 
 	if (stat(ret.c_str(), &buf) != 0)
@@ -250,6 +251,14 @@ Dispatcher::ResolveExternalExecutable(std::string const &path)
 
 	struct passwd *pwd = getpwuid(getuid());
 	string homedir = pwd->pw_dir;
+
+	for (vector<string>::iterator iter = allowed.begin(); iter != allowed.end(); ++iter)
+	{
+		if (String(*iter).Strip() == string(pwd->pw_name))
+		{
+			return ret;
+		}
+	}
 
 	if (buf.st_uid != getuid())
 	{
