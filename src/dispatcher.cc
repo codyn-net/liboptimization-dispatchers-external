@@ -537,6 +537,7 @@ Dispatcher::LaunchPersistent()
 			}
 
 			usleep(1000000);
+			cerr << "Could not connect to external one..." << endl;
 		}
 	}
 
