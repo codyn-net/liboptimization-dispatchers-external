@@ -429,6 +429,7 @@ Dispatcher::LaunchPersistent()
 	size_t tried = 0;
 	bool launched = false;
 	string addr;
+	int sin;
 
 	// Check if it's overwritten by some environment variable, hmm hack!
 	string envvar;
@@ -500,9 +501,15 @@ Dispatcher::LaunchPersistent()
 				Glib::spawn_async_with_pipes(WorkingDirectory(),
 				                             argv,
 				                             envs,
-				                             Glib::SPAWN_SEARCH_PATH,
+				                             Glib::SPAWN_SEARCH_PATH |
+				                             Glib::SPAWN_STDOUT_TO_DEV_NULL,
 				                             sigc::slot<void>(),
-				                             &pid);
+				                             &pid,
+				                             &sin);
+
+				/* We don't care about stdin and stdout in
+				   particular */
+				close(sin);
 
 				string delay;
 				if (Setting("startup-delay", delay))
