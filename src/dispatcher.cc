@@ -525,6 +525,7 @@ Dispatcher::LaunchPersistent()
 			}
 
 			launched = true;
+			continue;
 		}
 
 		if (!client)
