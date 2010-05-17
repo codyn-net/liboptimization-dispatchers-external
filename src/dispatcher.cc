@@ -49,6 +49,12 @@ Dispatcher::~Dispatcher()
 void
 Dispatcher::Stop()
 {
+	if (d_client)
+	{
+		d_client.OnClosed().Remove(*this, &Dispatcher::OnClientClosed);
+		d_client.Close();
+	}
+
 	KillExternal();
 	optimization::Dispatcher::Stop();
 }
@@ -190,7 +196,6 @@ bool
 Dispatcher::OnTimeout()
 {
 	// Close external
-	KillExternal();
 	Stop();
 
 	return false;
@@ -418,6 +423,12 @@ Dispatcher::SendTask(FileDescriptor &out)
 	}
 }
 
+void
+Dispatcher::OnClientClosed(int fd)
+{
+	Stop();
+}
+
 bool
 Dispatcher::LaunchPersistent()
 {
@@ -425,7 +436,6 @@ Dispatcher::LaunchPersistent()
 	Setting("persistent", persist);
 
 	// Try to connect to the persistent app
-	Client client;
 	size_t tried = 0;
 	bool launched = false;
 	string addr;
@@ -490,11 +500,11 @@ Dispatcher::LaunchPersistent()
 
 	GPid pid;
 
-	while (!client)
+	while (!d_client)
 	{
-		client = Client::Resolve<Client>(AddressInfo::Parse(addr));
+		d_client = Client::Resolve<Client>(AddressInfo::Parse(addr));
 
-		if (!client && !launched)
+		if (!d_client && !launched)
 		{
 			try
 			{
@@ -528,7 +538,7 @@ Dispatcher::LaunchPersistent()
 			continue;
 		}
 
-		if (!client)
+		if (!d_client)
 		{
 			if (++tried >= 20)
 			{
@@ -541,7 +551,7 @@ Dispatcher::LaunchPersistent()
 		}
 	}
 
-	if (!client)
+	if (!d_client)
 	{
 		if (launched)
 		{
@@ -552,8 +562,10 @@ Dispatcher::LaunchPersistent()
 	}
 
 	// Send task
-	ReadDataFrom(client);
-	SendTask(client);
+	ReadDataFrom(d_client);
+	SendTask(d_client);
+
+	d_client.OnClosed().Add(*this, &Dispatcher::OnClientClosed);
 
 	return true;
 }
