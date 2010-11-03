@@ -5,7 +5,7 @@ Build-Depends: debhelper (>= 7),
                autotools-dev,
                cdbs,
                pkg-config,
-               liboptimization2-dev (>= 2.1)
+               liboptimization2-dev (>= 2.2)
 Standards-Version: 3.8.0
 Section: science
 Homepage: http://birg.epfl.ch
@@ -13,6 +13,6 @@ Homepage: http://birg.epfl.ch
 Package: liboptimization2-dispatchers-external
 Section: science
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, liboptimization2 (>= 2.1)
+Depends: ${shlibs:Depends}, ${misc:Depends}, liboptimization2 (>= 2.2)
 Description: Optimization external dispatcher
  Optimization dispatcher for external applications
