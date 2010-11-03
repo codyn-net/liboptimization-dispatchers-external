@@ -1,4 +1,4 @@
-AC_INIT(liboptimization-dispatchers-external, 2.8)
+AC_INIT(liboptimization-dispatchers-external, 2.9)
 
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
@@ -18,7 +18,7 @@ AM_MAINTAINER_MODE
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 PKG_CHECK_MODULES(PACKAGE_DISPATCHERS, [
-	liboptimization-2.0 >= 2.2
+	liboptimization-2.0 >= 2.3
 ])
 
 AC_SUBST(PACKAGE_DISPATCHERS_CFLAGS)
