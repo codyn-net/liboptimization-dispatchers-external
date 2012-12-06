@@ -18,6 +18,7 @@ external_SOURCES = \
 	dispatcher.cc \
 	config.cc
 
+external_CXXFLAGS = "-Wl,--no-as-needed"
 external_LDFLAGS = $(PACKAGE_DISPATCHERS_LIBS)
 
 NO_INST_HFILES = \
