@@ -1,3 +1,10 @@
+liboptimization2-dispatchers-external (2.11-1) UNRELEASED; urgency=low
+
+  * New upstream release
+  * Link against new libjessevdk
+
+ -- Jesse van den Kieboom <jesse.vandenkieboom@epfl.ch>  Mon, 18 Mar 2013 09:49:31 +0100
+
 liboptimization2-dispatchers-external (2.10-1) UNRELEASED; urgency=low
 
   * New upstream release
